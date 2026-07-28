@@ -28,7 +28,7 @@ Python 3.10+ is required.
 
 git clone <url> FHL-SNN
 
-cd FHL-SNN
+cd fhl_snn
 
 python -m venv .venv && source .venv/bin/activate
 
