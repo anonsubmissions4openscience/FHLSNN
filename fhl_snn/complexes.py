@@ -1,8 +1,4 @@
 """Simplicial complexes, boundary operators and Hodge Laplacians.
-
-Conventions (satisfying B1 @ B2 == 0):
-  B1 : |V| x |E|   vertex-edge,   edge (i<j) has -1 at i, +1 at j
-  B2 : |E| x |F|   edge-triangle, triangle (i<j<k) has +1,+1,-1 on (i,j),(j,k),(i,k)
 """
 from __future__ import annotations
 
@@ -11,8 +7,6 @@ import time
 import numpy as np
 import scipy.sparse as sp
 
-
-# --------------------------------------------------------------- construction
 def build_complex(n_nodes: int, edges):
     """Return (B1, B2, triangles). `edges` is a sorted list of (i, j), i < j."""
     edges = [tuple(sorted(map(int, e))) for e in edges]
@@ -74,14 +68,11 @@ def eq3_down_laplacian(edges):
 
 
 def incidence_edge_to_node(B1):
-    """Row-normalised |B1|: averages incident edge signals onto nodes."""
     A = abs(B1).tocsr()
     rs = np.asarray(A.sum(1)).ravel()
     rs[rs == 0] = 1.0
     return (sp.diags(1.0 / rs) @ A).tocsr()
 
-
-# --------------------------------------------------------------- diagnostics
 def check_degree_hypothesis(n_nodes, edges, tris=None, N: int = 1) -> dict:
     """Theorem 3.4/3.6 require every (N-1)-simplex to have degree exactly 2.
 
@@ -115,7 +106,6 @@ def check_degree_hypothesis(n_nodes, edges, tris=None, N: int = 1) -> dict:
 
 
 def spectrum_summary(L) -> dict:
-    """lambda_2 (smallest non-zero), lambda_max, PSD flag, kernel dimension."""
     dense = L.toarray() if sp.issparse(L) else np.asarray(L)
     w = np.linalg.eigvalsh((dense + dense.T) / 2)
     nz = w[w > 1e-9]
@@ -129,7 +119,6 @@ def spectrum_summary(L) -> dict:
 
 
 def is_m_matrix(L, tol: float = 1e-9) -> dict:
-    """M-matrix requires non-positive off-diagonal entries."""
     dense = L.toarray() if sp.issparse(L) else np.asarray(L)
     off = dense - np.diag(np.diag(dense))
     n_pos = int((off > tol).sum())
@@ -142,7 +131,6 @@ def is_m_matrix(L, tol: float = 1e-9) -> dict:
 
 
 def preprocessing_cost(n_nodes, edges, repeat: int = 1) -> dict:
-    """Wall-clock for complex construction (reviewer p3ki, question 5)."""
     t0 = time.perf_counter()
     for _ in range(repeat):
         B1, B2, tris = build_complex(n_nodes, edges)
