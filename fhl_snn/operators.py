@@ -28,7 +28,7 @@ def exact_fractional(L, gamma: float) -> np.ndarray:
 
 
 def schur_pade_fractional(L, gamma: float) -> np.ndarray:
-    """Reference implementation used for the runtime comparison."""
+    
     dense = L.toarray() if sp.issparse(L) else np.asarray(L, dtype=float)
     return np.real(fractional_matrix_power(dense, gamma))
 
@@ -44,7 +44,6 @@ def largest_eigenvalue(L) -> float:
 
 # --------------------------------------------------------------- Chebyshev
 def cheb_coeffs(gamma: float, K: int, lam_max: float) -> np.ndarray:
-    """Chebyshev coefficients of t^gamma on [0, lam_max] (paper Algorithm 1)."""
     l = np.arange(K)
     nodes = np.cos(np.pi * (l + 0.5) / K)
     lam = (nodes + 1) * lam_max / 2.0
@@ -54,22 +53,16 @@ def cheb_coeffs(gamma: float, K: int, lam_max: float) -> np.ndarray:
 
 
 def cheb_at_zero(gamma: float, K: int, lam_max: float) -> float:
-    """p_K(0).  Rescaled argument is -1, and T_k(-1) = (-1)^k."""
     c = cheb_coeffs(gamma, K, lam_max)
     return float(c[0] / 2 + sum(c[k] * (-1) ** k for k in range(1, K)))
 
 
 def row_sum_deficit(gamma: float, K: int, lam_max: float) -> float:
-    """Uniform row-sum shortfall  rho * p_K(0)  with rho = lam_max^-gamma.
-
-    Independent of the graph: p_K(0) scales as lam_max^gamma, cancelling rho.
-    """
     return cheb_at_zero(gamma, K, lam_max) / (lam_max ** gamma)
 
 
 def cheb_matrix(L, gamma: float, K: int, lam_max: float | None = None,
                 shift: bool = False) -> np.ndarray:
-    """Dense p_K(L) (or q_K(L) if shift). For diagnostics on small operators."""
     dense = L.toarray() if sp.issparse(L) else np.asarray(L, dtype=float)
     n = dense.shape[0]
     lam_max = largest_eigenvalue(dense) if lam_max is None else lam_max
@@ -87,7 +80,6 @@ def cheb_matrix(L, gamma: float, K: int, lam_max: float | None = None,
 
 
 class ChebFilter:
-    """Applies P_gamma = I - rho L^gamma with sparse matvecs, O(K * nnz)."""
 
     def __init__(self, L, K: int = 24, lam_max: float | None = None,
                  shift: bool = True, device=None):
@@ -140,7 +132,6 @@ def _sp2torch(A, device):
 
 # --------------------------------------------------------------- diagnostics
 def stochasticity_report(P, tol: float = 1e-9) -> dict:
-    """Non-negativity, sign pattern, row/column sums, operator norms."""
     P = np.asarray(P)
     n = P.shape[0]
     off = P - np.diag(np.diag(P))
@@ -161,7 +152,6 @@ def stochasticity_report(P, tol: float = 1e-9) -> dict:
 
 
 def check_lambda_max_bound(L, N: int = 1) -> dict:
-    """Theorem 3.4's proof uses lambda_max <= N+1.  Test it."""
     lam_max = largest_eigenvalue(L)
     return dict(lambda_max=lam_max, bound=N + 1,
                 satisfied=bool(lam_max <= N + 1),
@@ -169,7 +159,6 @@ def check_lambda_max_bound(L, N: int = 1) -> dict:
 
 
 def mixing_time(P, eps: float = 0.01, t_max: int = 200000) -> int | None:
-    """Measured mixing time to total-variation distance eps from uniform."""
     P = np.asarray(P)
     n = P.shape[0]
     pi = np.ones(n) / n
@@ -183,7 +172,6 @@ def mixing_time(P, eps: float = 0.01, t_max: int = 200000) -> int | None:
 
 
 def density(L, tol: float = 1e-8) -> dict:
-    """Off-diagonal non-zero count and density."""
     dense = L.toarray() if sp.issparse(L) else np.asarray(L)
     n = dense.shape[0]
     nnz = int((np.abs(dense) > tol).sum() - np.count_nonzero(np.abs(np.diag(dense)) > tol))
