@@ -413,7 +413,7 @@ def exp_structure_control(data, gamma: float = 0.5, seeds=(0, 1, 2),
     return rows, dens
 
 def exp_preprocessing_cost(datasets: dict, repeat: int = 3):
-    """Wall-clock for simplicial complex construction (p3ki Q5)."""
+    """Wall-clock for simplicial complex construction."""
     rows = []
     for name, d in datasets.items():
         n = int(d.x.size(0))
