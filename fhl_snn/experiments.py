@@ -20,13 +20,9 @@ except ImportError:
     torch = None
 
 
-# ================================================================= preparation
-_PREP_CACHE: dict = {}
-
 
 def prepare(data, split_seed: int = 0, K: int = 16, shift: bool = True,
             use_cache: bool = True):
-    """Split edges, build the TRAINING complex, and construct Chebyshev filters."""
     key = (id(data), split_seed, K, shift)
     if use_cache and key in _PREP_CACHE:
         return _PREP_CACHE[key]
@@ -63,14 +59,11 @@ def prepare(data, split_seed: int = 0, K: int = 16, shift: bool = True,
 def clear_cache():
     _PREP_CACHE.clear()
 
-
-# ================================================================= main results
 def exp_gamma_sweep(data, gammas=(0.1, 0.3, 0.5, 0.7, 0.9, 1.0),
                     seeds=(0, 1, 2), K: int = 16, split_seed: int = 0,
                     use_simplicial: bool = True, epochs: int = 120,
                     store: Results | None = None, tag: str = "",
                     verbose: bool = True):
-    """Link-prediction AUC as a function of the fractional exponent gamma."""
     prep = prepare(data, split_seed=split_seed, K=K)
     rows = []
     for g in gammas:
@@ -100,7 +93,6 @@ def exp_gamma_sweep(data, gammas=(0.1, 0.3, 0.5, 0.7, 0.9, 1.0),
 def exp_k_study(data, Ks=(4, 8, 16, 32), gamma: float = 0.5, seeds=(0, 1, 2),
                 split_seed: int = 0, epochs: int = 80,
                 store: Results | None = None, tag: str = "", verbose: bool = True):
-    """Downstream sensitivity to the Chebyshev order K (p3ki Q4)."""
     rows = []
     for K in Ks:
         clear_cache()
@@ -129,11 +121,7 @@ def exp_k_study(data, Ks=(4, 8, 16, 32), gamma: float = 0.5, seeds=(0, 1, 2),
                   f"{rows[-1]['seconds']:.0f}s/run")
     clear_cache()
     return rows
-
-
-# ================================================================= theory checks
 def exp_hypothesis_check(datasets: dict, N: int = 1):
-    """Do real complexes satisfy the degree-2 hypothesis?  (p3ki Q1)"""
     rows = []
     for name, d in datasets.items():
         n = int(d.x.size(0))
@@ -150,10 +138,6 @@ def exp_hypothesis_check(datasets: dict, N: int = 1):
 
 
 def exp_operator_wellposedness(graphs: dict, gamma: float = 0.5):
-    """PSD-ness, M-matrix property, kernel, and the lambda_max <= N+1 bound.
-
-    Compares the paper's Eq. (3) operator against the true Hodge down-Laplacian.
-    """
     rows = []
     for name, G in graphs.items():
         edges = sorted(tuple(sorted(e)) for e in G.edges())
@@ -179,7 +163,6 @@ def exp_operator_wellposedness(graphs: dict, gamma: float = 0.5):
 
 def exp_eq4_normalisation(graphs: dict, gamma: float = 0.5, p: float = 0.5,
                           N: int = 0):
-    """Is P~ stochastic under the fixed rho of Eq. (4)?  (p3ki Q2/Q3)"""
     rho_fixed = 2 * (1 - p) / (N + 1)
     rows = []
     for name, G in graphs.items():
@@ -200,7 +183,6 @@ def exp_eq4_normalisation(graphs: dict, gamma: float = 0.5, p: float = 0.5,
 # ================================================================= Chebyshev
 def exp_chebyshev_properties(L, gammas=(0.3, 0.5, 0.7), Ks=(10, 30, 60),
                              shift_variants=(False, True)):
-    """Sign pattern, row/column sums, stochasticity vs K and gamma (p3ki Q3)."""
     lam_max = ops.largest_eigenvalue(L)
     rows = []
     for shift in shift_variants:
@@ -222,7 +204,6 @@ def exp_chebyshev_properties(L, gammas=(0.3, 0.5, 0.7), Ks=(10, 30, 60),
 
 
 def exp_chebyshev_error(L, gammas=(0.3, 0.5, 0.7), Ks=(10, 20, 40, 80)):
-    """Approximation error vs K: algebraic or geometric decay?  (p3ki Q4, koHV)"""
     lam_max = ops.largest_eigenvalue(L)
     rows = []
     for g in gammas:
@@ -242,7 +223,6 @@ def exp_chebyshev_error(L, gammas=(0.3, 0.5, 0.7), Ks=(10, 20, 40, 80)):
 
 def exp_runtime_comparison(n: int = 1000, gamma: float = 0.5, Ks=(20, 50),
                            seed: int = 1, feature_dims=(1, 64)):
-    """Schur-Pade vs Chebyshev.  The speedup depends on the operand shape."""
     G = nx.barabasi_albert_graph(n, 3, seed=seed)
     A = nx.to_numpy_array(G)
     L = np.diag(A.sum(1)) - A
@@ -319,8 +299,6 @@ def exp_expander_mixing(suite=None, gammas=(0.3, 0.5, 0.7, 1.0), eps: float = 0.
                 predicted_corrected=float((lam2 / lam_max) ** (-(1 - g)))))
     return rows
 
-
-# ================================================================= 6ZbZ control
 def exp_operator_density(L, gammas=(0.3, 0.5, 0.7)):
     """Does L^gamma have more non-zeros than L?  (6ZbZ)"""
     base = ops.density(L)
@@ -434,8 +412,6 @@ def exp_structure_control(data, gamma: float = 0.5, seeds=(0, 1, 2),
             print(f"  {label:9s} AUC {rows[-1]['auc_str']}")
     return rows, dens
 
-
-# ================================================================= cost
 def exp_preprocessing_cost(datasets: dict, repeat: int = 3):
     """Wall-clock for simplicial complex construction (p3ki Q5)."""
     rows = []
