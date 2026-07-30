@@ -23,11 +23,6 @@ def load_dataset(name: str, root: str = DEFAULT_ROOT):
     if name in PLANETOID:
         from torch_geometric.datasets import Planetoid
         return Planetoid(root=root, name=name)[0]
-    raise ValueError(
-        f"Unknown dataset '{name}'. Supported here: {sorted(PLANETOID)}. "
-        "Criminal-network and PCQM loaders should be added alongside this "
-        "function once those files are available."
-    )
 
 
 # --------------------------------------------------------------- synthetic graphs
@@ -73,10 +68,6 @@ EXPANDER_SUITE = [
 
 def graph_to_data(G: nx.Graph, features: str = "identity", dim: int = 32,
                   seed: int = 0):
-    """Wrap a networkx graph as a PyG Data object.
-
-    features: 'identity' (transductive one-hot) or 'random'.
-    """
     if Data is None:
         raise ImportError("torch_geometric is required for graph_to_data")
     G = nx.convert_node_labels_to_integers(G)
@@ -96,7 +87,6 @@ def graph_to_data(G: nx.Graph, features: str = "identity", dim: int = 32,
 
 # --------------------------------------------------------------- edge handling
 def undirected_edges(edge_index) -> list[tuple[int, int]]:
-    """Deduplicated, self-loop-free, sorted undirected edge list."""
     ei = edge_index.numpy() if hasattr(edge_index, "numpy") else np.asarray(edge_index)
     seen = set()
     for a, b in zip(ei[0], ei[1]):
@@ -108,12 +98,6 @@ def undirected_edges(edge_index) -> list[tuple[int, int]]:
 
 def split_edges(edges, n_nodes: int, seed: int = 0,
                 val_prop: float = 0.05, test_prop: float = 0.10):
-    """Link-prediction split.
-
-    Returns train/val/test positives and an equal number of sampled negatives.
-    The training complex must be built from the TRAIN POSITIVES ONLY -- passing
-    all edges leaks the evaluation targets into the operator.
-    """
     rng = np.random.RandomState(seed)
     E = np.array(edges)
     E = E[rng.permutation(len(E))]
